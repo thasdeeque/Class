@@ -1,190 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bottom Navigation Bar</title>
-  <style>
-    /* Reset & Background */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smooth Bottom Navigation</title>
+    <style>
+        :root {
+            --page-bg: #f2f2f7;
+            --nav-bg: #1c1c1e;
+            --active-bg: #f2f2f7;
+            --active-color: #111111;
+            --inactive-color: #6c6c70;
+            /* Ultra-smooth easing curve inspired by native iOS/Wayland animations */
+            --smooth-ease: cubic-bezier(0.25, 1, 0.4, 1);
+        }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: #0f0f12;
-      color: #ffffff;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+        body {
+            background-color: var(--page-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    .demo-content {
-      text-align: center;
-      padding: 20px;
-      color: #71717a;
-    }
+        /* Main Navigation Container */
+        .bottom-nav {
+            background-color: var(--nav-bg);
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 999px;
+            gap: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
 
-    .demo-content h1 {
-      color: #f4f4f5;
-      font-size: 1.5rem;
-      margin-bottom: 8px;
-    }
+        /* Individual Navigation Items */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 56px;
+            border-radius: 999px;
+            cursor: pointer;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            position: relative;
+            box-sizing: border-box;
+            
+            /* The core of the ultra-smooth expansion */
+            transition: max-width 0.5s var(--smooth-ease),
+                        background-color 0.4s var(--smooth-ease),
+                        padding 0.5s var(--smooth-ease);
+        }
 
-    /* Floating Bottom Navigation Bar */
-    .bottom-nav {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 32px);
-      max-width: 420px;
-      height: 64px;
-      background: rgba(18, 18, 22, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 32px;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 0 10px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-      z-index: 1000;
-    }
+        /* Active State Pill */
+        .nav-item.active {
+            max-width: 160px; /* Expands to fit text */
+            background-color: var(--active-bg);
+            padding: 0 28px 0 24px;
+        }
 
-    /* Nav Links */
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      color: #8e8e93;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      flex: 1;
-      height: 100%;
-    }
+        /* Inactive State Pill */
+        .nav-item.inactive {
+            max-width: 56px; /* Collapses to circle */
+            width: 56px;
+            background-color: transparent;
+            padding: 0;
+        }
 
-    .nav-icon {
-      width: 22px;
-      height: 22px;
-      transition: transform 0.2s ease, stroke 0.2s ease;
-    }
+        .nav-item.inactive:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
 
-    .nav-label {
-      font-size: 11px;
-      font-weight: 500;
-      margin-top: 3px;
-    }
+        /* Icon Container */
+        .icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            z-index: 2;
+        }
 
-    /* States */
-    .nav-item:hover {
-      color: #f3f4f6;
-    }
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2.2;
+            transition: stroke 0.4s var(--smooth-ease);
+        }
 
-    .nav-item.active {
-      color: #3b82f6;
-    }
+        .nav-item.active .nav-icon {
+            stroke: var(--active-color);
+        }
 
-    .nav-item.active .nav-icon {
-      transform: translateY(-2px);
-    }
+        .nav-item.inactive .nav-icon {
+            stroke: var(--inactive-color);
+        }
 
-    /* Center Action Button */
-    .nav-item-primary {
-      position: relative;
-      top: -10px;
-    }
+        /* Text Label */
+        .nav-text {
+            color: var(--active-color);
+            font-size: 16.5px;
+            font-weight: 600;
+            margin-left: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            
+            /* Text fading and sliding out smoothly */
+            opacity: 0;
+            transform: translateX(-8px);
+            transition: opacity 0.3s var(--smooth-ease),
+                        transform 0.4s var(--smooth-ease),
+                        margin 0.4s var(--smooth-ease),
+                        max-width 0.4s var(--smooth-ease);
+            max-width: 0;
+        }
 
-    .primary-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #6366f1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
+        .nav-item.active .nav-text {
+            opacity: 1;
+            transform: translateX(0);
+            max-width: 100px; /* Reveals text space */
+            transition-delay: 0.05s; /* Slight delay feels more organic */
+        }
 
-    .primary-btn .nav-icon {
-      width: 24px;
-      height: 24px;
-      stroke: #ffffff;
-    }
-
-    .primary-btn:hover {
-      transform: scale(1.08);
-      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
-    }
-  </style>
+        .nav-item.inactive .nav-text {
+            margin-left: 0;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="demo-content">
-    <h1>App Content</h1>
-    <p>Bottom navigation bar preview</p>
-  </div>
+    <nav class="bottom-nav">
+        <!-- Home -->
+        <a href="#" class="nav-item active" data-name="Home">
+            <div class="icon-wrapper">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-10.5z"></path>
+                    <path d="M9 22V12h6v10"></path>
+                </svg>
+            </div>
+            <span class="nav-text">Home</span>
+        </a>
 
-  <!-- Bottom Navigation Bar -->
-  <nav class="bottom-nav">
-    <a href="#home" class="nav-item active">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-      </svg>
-      <span class="nav-label">Home</span>
-    </a>
+        <!-- Truck -->
+        <a href="#" class="nav-item inactive" data-name="Deliveries">
+            <div class="icon-wrapper">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="3" width="15" height="13" rx="1"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+            </div>
+            <span class="nav-text">Deliveries</span>
+        </a>
 
-    <a href="#search" class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-      <span class="nav-label">Search</span>
-    </a>
+        <!-- Shopping Bag -->
+        <a href="#" class="nav-item inactive" data-name="Shop">
+            <div class="icon-wrapper">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+            </div>
+            <span class="nav-text">Shop</span>
+        </a>
 
-    <a href="#create" class="nav-item nav-item-primary">
-      <div class="primary-btn">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      </div>
-    </a>
+        <!-- Sparkles / Magic -->
+        <a href="#" class="nav-item inactive" data-name="Magic">
+            <div class="icon-wrapper">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Custom curved 4-point star based on the reference -->
+                    <path d="M12 3c0 4.5-1.5 6-6 6 4.5 0 6 1.5 6 6 0-4.5 1.5-6 6-6-4.5 0-6-1.5-6-6z"></path>
+                    <path d="M19 4v4m-2-2h4"></path>
+                    <circle cx="5" cy="18" r="1.5"></circle>
+                </svg>
+            </div>
+            <span class="nav-text">Magic</span>
+        </a>
+    </nav>
 
-    <a href="#alerts" class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-      </svg>
-      <span class="nav-label">Alerts</span>
-    </a>
+    <script>
+        // Logic to trigger the ultra-smooth active state transitions
+        const navItems = document.querySelectorAll('.nav-item');
 
-    <a href="#profile" class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-      <span class="nav-label">Profile</span>
-    </a>
-  </nav>
-
-  <script>
-    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
-      item.addEventListener('click', function(e) {
-        if (this.classList.contains('nav-item-primary')) return;
-        
-        document.querySelectorAll('.bottom-nav .nav-item').forEach(nav => nav.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-  </script>
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Reset all items to inactive
+                navItems.forEach(nav => {
+                    if (nav !== item) {
+                        nav.classList.remove('active');
+                        nav.classList.add('inactive');
+                    }
+                });
+                
+                // Set the clicked item to active
+                item.classList.remove('inactive');
+                item.classList.add('active');
+            });
+        });
+    </script>
 </body>
 </html>
