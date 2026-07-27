@@ -5,205 +5,163 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smooth Bottom Navigation</title>
     <style>
-        :root {
-            --page-bg: #f2f2f7;
-            --nav-bg: #1c1c1e;
-            --active-bg: #f2f2f7;
-            --active-color: #111111;
-            --inactive-color: #6c6c70;
-            /* Ultra-smooth easing curve inspired by native iOS/Wayland animations */
-            --smooth-ease: cubic-bezier(0.25, 1, 0.4, 1);
-        }
-
+        /* Base page styling */
         body {
-            background-color: var(--page-bg);
+            margin: 0;
+            padding: 0;
+            background-color: #F4F4F8; /* Light background matching the image */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-font-smoothing: antialiased;
         }
 
-        /* Main Navigation Container */
+        /* Outer pill container */
         .bottom-nav {
-            background-color: var(--nav-bg);
+            position: fixed;
+            bottom: 40px;
             display: flex;
             align-items: center;
+            background-color: #1A1A1C; /* Dark charcoal */
             padding: 8px;
-            border-radius: 999px;
-            gap: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            border-radius: 50px;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            /* Prevents highlight on mobile tap */
+            -webkit-tap-highlight-color: transparent; 
         }
 
-        /* Individual Navigation Items */
+        /* Individual navigation items */
         .nav-item {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 56px;
-            border-radius: 999px;
-            cursor: pointer;
+            padding: 12px 16px;
+            border-radius: 50px;
             text-decoration: none;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            position: relative;
-            box-sizing: border-box;
-            
-            /* The core of the ultra-smooth expansion */
-            transition: max-width 0.5s var(--smooth-ease),
-                        background-color 0.4s var(--smooth-ease),
-                        padding 0.5s var(--smooth-ease);
+            color: #71717A; /* Muted gray for inactive icons */
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                        color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
         }
 
-        /* Active State Pill */
-        .nav-item.active {
-            max-width: 160px; /* Expands to fit text */
-            background-color: var(--active-bg);
-            padding: 0 28px 0 24px;
-        }
-
-        /* Inactive State Pill */
-        .nav-item.inactive {
-            max-width: 56px; /* Collapses to circle */
-            width: 56px;
-            background-color: transparent;
-            padding: 0;
-        }
-
-        .nav-item.inactive:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        /* Icon Container */
-        .icon-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 24px;
-            height: 24px;
-            z-index: 2;
-        }
-
-        .nav-icon {
+        /* SVG Icons */
+        .nav-item svg {
             width: 24px;
             height: 24px;
-            stroke-width: 2.2;
-            transition: stroke 0.4s var(--smooth-ease);
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
         }
 
-        .nav-item.active .nav-icon {
-            stroke: var(--active-color);
+        /* 
+           CSS Grid animation trick for smooth width transitions.
+           This keeps the outer container perfectly still while the inner items swap widths.
+        */
+        .text-wrapper {
+            display: grid;
+            grid-template-columns: 0fr;
+            transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-left: 0;
+            align-items: center;
         }
 
-        .nav-item.inactive .nav-icon {
-            stroke: var(--inactive-color);
-        }
-
-        /* Text Label */
         .nav-text {
-            color: var(--active-color);
-            font-size: 16.5px;
-            font-weight: 600;
-            margin-left: 10px;
-            white-space: nowrap;
             overflow: hidden;
-            
-            /* Text fading and sliding out smoothly */
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 15px;
             opacity: 0;
-            transform: translateX(-8px);
-            transition: opacity 0.3s var(--smooth-ease),
-                        transform 0.4s var(--smooth-ease),
-                        margin 0.4s var(--smooth-ease),
-                        max-width 0.4s var(--smooth-ease);
-            max-width: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Active State Styles */
+        .nav-item.active {
+            background-color: #F4F4F8; /* Light pill background */
+            color: #1A1A1C; /* Dark text and icon */
+        }
+
+        .nav-item.active .text-wrapper {
+            grid-template-columns: 1fr;
+            margin-left: 8px; /* Spacing between icon and text */
         }
 
         .nav-item.active .nav-text {
             opacity: 1;
-            transform: translateX(0);
-            max-width: 100px; /* Reveals text space */
-            transition-delay: 0.05s; /* Slight delay feels more organic */
-        }
-
-        .nav-item.inactive .nav-text {
-            margin-left: 0;
+            /* Slight delay so text fades in after width expands */
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s; 
         }
     </style>
 </head>
 <body>
 
     <nav class="bottom-nav">
-        <!-- Home -->
-        <a href="#" class="nav-item active" data-name="Home">
-            <div class="icon-wrapper">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9.5L12 3l9 6.5V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-10.5z"></path>
-                    <path d="M9 22V12h6v10"></path>
-                </svg>
+        <!-- Home Tab (Active by default) -->
+        <a href="#" class="nav-item active">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <div class="text-wrapper">
+                <span class="nav-text">Home</span>
             </div>
-            <span class="nav-text">Home</span>
         </a>
 
-        <!-- Truck -->
-        <a href="#" class="nav-item inactive" data-name="Deliveries">
-            <div class="icon-wrapper">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="1" y="3" width="15" height="13" rx="1"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
+        <!-- Delivery Tab -->
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <div class="text-wrapper">
+                <span class="nav-text">Delivery</span>
             </div>
-            <span class="nav-text">Deliveries</span>
         </a>
 
-        <!-- Shopping Bag -->
-        <a href="#" class="nav-item inactive" data-name="Shop">
-            <div class="icon-wrapper">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
+        <!-- Shopping Bag Tab -->
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <div class="text-wrapper">
+                <span class="nav-text">Cart</span>
             </div>
-            <span class="nav-text">Shop</span>
         </a>
 
-        <!-- Sparkles / Magic -->
-        <a href="#" class="nav-item inactive" data-name="Magic">
-            <div class="icon-wrapper">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- Custom curved 4-point star based on the reference -->
-                    <path d="M12 3c0 4.5-1.5 6-6 6 4.5 0 6 1.5 6 6 0-4.5 1.5-6 6-6-4.5 0-6-1.5-6-6z"></path>
-                    <path d="M19 4v4m-2-2h4"></path>
-                    <circle cx="5" cy="18" r="1.5"></circle>
-                </svg>
+        <!-- Magic/Stars Tab -->
+        <a href="#" class="nav-item">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 2.5s1.5 5 5 6.5c-3.5 1.5-5 6.5-5 6.5s-1.5-5-5-6.5c3.5-1.5 5-6.5 5-6.5z"/>
+                <path d="M19 12s1 2.5 3 3.5c-2 1-3 3.5-3 3.5s-1-2.5-3-3.5c2-1 3-3.5 3-3.5z"/>
+                <path d="M6 15s.5 1.5 1.5 2c-1 .5-1.5 2-1.5 2s-.5-1.5-1.5-2c1-.5 1.5-2 1.5-2z"/>
+            </svg>
+            <div class="text-wrapper">
+                <span class="nav-text">Stars</span>
             </div>
-            <span class="nav-text">Magic</span>
         </a>
     </nav>
 
     <script>
-        // Logic to trigger the ultra-smooth active state transitions
+        // Select all navigation items
         const navItems = document.querySelectorAll('.nav-item');
 
         navItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
+            item.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default link jumping
                 
-                // Reset all items to inactive
-                navItems.forEach(nav => {
-                    if (nav !== item) {
-                        nav.classList.remove('active');
-                        nav.classList.add('inactive');
-                    }
-                });
+                // Remove the 'active' class from all items
+                navItems.forEach(nav => nav.classList.remove('active'));
                 
-                // Set the clicked item to active
-                item.classList.remove('inactive');
-                item.classList.add('active');
+                // Add the 'active' class to the clicked item
+                this.classList.add('active');
             });
         });
     </script>
