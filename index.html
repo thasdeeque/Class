@@ -3,104 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smooth Bottom Navigation</title>
+    <title>Gliding Bottom Navigation</title>
     <style>
-        /* Base page styling */
+        :root {
+            /* Animation timing variables */
+            --trans-dur: 0.45s; 
+            --trans-ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #F4F4F8; /* Light background matching the image */
+            background-color: #F4F4F8; /* Light background */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             min-height: 100vh;
             display: flex;
             justify-content: center;
         }
 
-        /* Outer pill container */
+        /* Outer pill container - Made larger */
         .bottom-nav {
             position: fixed;
-            bottom: 40px;
+            bottom: 50px;
             display: flex;
             align-items: center;
-            background-color: #1A1A1C; /* Dark charcoal */
-            padding: 8px;
-            border-radius: 50px;
-            gap: 8px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            /* Prevents highlight on mobile tap */
+            background-color: #1A1A1C; 
+            padding: 10px; /* Increased padding */
+            border-radius: 60px; /* Larger radius */
+            gap: 10px; /* Increased gap */
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
             -webkit-tap-highlight-color: transparent; 
         }
 
-        /* Individual navigation items */
+        /* The white gliding background */
+        .glider {
+            position: absolute;
+            top: 10px; /* Matches container padding */
+            left: 0;
+            height: calc(100% - 20px);
+            background-color: #F4F4F8;
+            border-radius: 50px;
+            z-index: 0;
+            /* The glider always animates smoothly */
+            transition: transform var(--trans-dur) var(--trans-ease), 
+                        width var(--trans-dur) var(--trans-ease);
+        }
+
+        /* Individual navigation items - Made larger */
         .nav-item {
+            position: relative;
+            z-index: 1; /* Keeps icons above the glider */
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 12px 16px;
+            padding: 16px 24px; /* Increased padding */
             border-radius: 50px;
             text-decoration: none;
-            color: #71717A; /* Muted gray for inactive icons */
-            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-                        color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #8A8A93; /* Inactive gray */
+            transition: color var(--trans-dur) var(--trans-ease);
             cursor: pointer;
         }
 
-        /* SVG Icons */
+        .nav-item.active {
+            color: #1A1A1C; /* Dark text/icon when active */
+        }
+
+        /* SVG Icons - Scaled up */
         .nav-item svg {
-            width: 24px;
-            height: 24px;
+            width: 28px; /* Increased from 24px */
+            height: 28px; /* Increased from 24px */
             fill: none;
             stroke: currentColor;
-            stroke-width: 2;
+            stroke-width: 2.2;
             stroke-linecap: round;
             stroke-linejoin: round;
             flex-shrink: 0;
         }
 
-        /* 
-           CSS Grid animation trick for smooth width transitions.
-           This keeps the outer container perfectly still while the inner items swap widths.
-        */
+        /* Smooth expanding text logic */
         .text-wrapper {
             display: grid;
             grid-template-columns: 0fr;
-            transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: grid-template-columns var(--trans-dur) var(--trans-ease), 
+                        margin-left var(--trans-dur) var(--trans-ease);
             margin-left: 0;
             align-items: center;
+        }
+
+        .nav-item.active .text-wrapper {
+            grid-template-columns: 1fr;
+            margin-left: 12px; /* Increased spacing */
         }
 
         .nav-text {
             overflow: hidden;
             white-space: nowrap;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 17px; /* Increased from 15px */
             opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        /* Active State Styles */
-        .nav-item.active {
-            background-color: #F4F4F8; /* Light pill background */
-            color: #1A1A1C; /* Dark text and icon */
-        }
-
-        .nav-item.active .text-wrapper {
-            grid-template-columns: 1fr;
-            margin-left: 8px; /* Spacing between icon and text */
+            transition: opacity calc(var(--trans-dur) * 0.7) ease; 
         }
 
         .nav-item.active .nav-text {
             opacity: 1;
-            /* Slight delay so text fades in after width expands */
-            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.1s; 
+            transition: opacity var(--trans-dur) var(--trans-ease) 0.15s; 
         }
     </style>
 </head>
 <body>
 
     <nav class="bottom-nav">
-        <!-- Home Tab (Active by default) -->
+        <!-- The Gliding Background Element -->
+        <div class="glider"></div>
+
+        <!-- Home Tab -->
         <a href="#" class="nav-item active">
             <svg viewBox="0 0 24 24">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -150,18 +166,66 @@
     </nav>
 
     <script>
-        // Select all navigation items
+        const navContainer = document.querySelector('.bottom-nav');
         const navItems = document.querySelectorAll('.nav-item');
+        const glider = document.querySelector('.glider');
+        let prevActive = document.querySelector('.nav-item.active');
+
+        // Initial setup for the glider position and size
+        function updateGlider(activeElement) {
+            glider.style.width = `${activeElement.offsetWidth}px`;
+            glider.style.transform = `translateX(${activeElement.offsetLeft}px)`;
+        }
+
+        // Wait for page load to ensure fonts/layout are calculated
+        window.addEventListener('load', () => updateGlider(prevActive));
+        // Keep it aligned if the window is resized
+        window.addEventListener('resize', () => updateGlider(document.querySelector('.nav-item.active')));
 
         navItems.forEach(item => {
             item.addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent default link jumping
+                e.preventDefault();
                 
-                // Remove the 'active' class from all items
-                navItems.forEach(nav => nav.classList.remove('active'));
-                
-                // Add the 'active' class to the clicked item
+                // Do nothing if clicking the already active tab
+                if (this === prevActive) return;
+
+                /* 
+                   THE GLIDE LOGIC:
+                   To make the glider move perfectly, we need to know the final width 
+                   and position of the clicked tab *before* the CSS transition happens.
+                */
+
+                // 1. Temporarily turn off CSS transitions
+                navContainer.style.setProperty('--trans-dur', '0s');
+
+                // 2. Apply classes to check the "future" state
+                prevActive.classList.remove('active');
                 this.classList.add('active');
+
+                // 3. Measure the future width and position
+                const targetWidth = this.offsetWidth;
+                const targetLeft = this.offsetLeft;
+
+                // 4. Revert back to the "current" state
+                this.classList.remove('active');
+                prevActive.classList.add('active');
+
+                // 5. Force a browser reflow to register the revert instantly
+                void navContainer.offsetHeight;
+
+                // 6. Turn CSS transitions back on
+                navContainer.style.setProperty('--trans-dur', '0.45s');
+
+                // 7. Apply the classes for real this time
+                prevActive.classList.remove('active');
+                this.classList.add('active');
+
+                // 8. Command the glider to move to the pre-measured location
+                glider.style.width = `${targetWidth}px`;
+                glider.style.transform = `translateX(${targetLeft}px)`;
+
+                // 9. Update the previous active item reference
+                prevActive = this;
             });
         });
     </script>
